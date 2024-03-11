@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 dataset_path = r'C:\Users\User\PycharmProjects\COMP472_Emotion_Detection_Project\dataset'
 
 # Define the classes or labels and dataset types (train/test)
-classes = ['happy', 'neutral', 'surprised', 'angry']
+classes = ['happy', 'neutral', 'surprised', 'focused']
 dataset_types = ['train', 'test']
 
 # This is a function definition to load and process the data.
@@ -64,15 +64,5 @@ plt.hist(test_labels_np, bins=np.arange(len(classes) + 1), align='left', rwidth=
 plt.xticks(ticks=np.arange(len(classes)), labels=classes)
 plt.title('Class Distribution in Testing Data')
 plt.show()
-
-
-print(f"Displaying sample images. Train data length: {len(train_data)}")
-
-# Optional: Display a few sample images from the training set
-for i in range(3):
-    img = transforms.ToPILImage()(train_data[i])
-    plt.imshow(img)
-    plt.title(classes[train_labels[i]])
-    plt.show()
 
 
