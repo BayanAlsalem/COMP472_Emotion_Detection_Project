@@ -3,14 +3,16 @@
 # ####################################################################################################
 
 # 1-Import necessary libraries
-import os
 import torch
+from matplotlib import pyplot as plt
+from torch import random
 from torchvision import datasets, transforms
 from sklearn.model_selection import train_test_split
-import numpy as np
-import random
 from torch.utils.data import Subset
-import matplotlib.pyplot as plt
+import torch.optim as optim
+import torch.nn as nn
+from torch.utils.data import DataLoader
+
 
 
 # 2-Define data directory
@@ -116,3 +118,61 @@ def display_sample_images_and_intensity_distribution(dataset, selected_class_nam
 
 selected_class_names = ['focused', 'happy', 'neutral', 'sad']
 display_sample_images_and_intensity_distribution(dataset, selected_class_names)
+
+
+
+
+# ####################################################################################################
+# ################################ CNN model Hyperparameters  ###################################
+# ####################################################################################################
+
+# 1- hyper-parameters definition
+num_epochs = 10
+num_classes = 4
+learning_rate = 0.001
+
+# 2-Import the cnn class
+from cnn_1 import CNN_Module_1_twoLayers
+
+# 3-Instantiate the CNN model
+model = CNN_Module_1_twoLayers(num_classes)
+
+# 4-Define loss function
+criterion = nn.CrossEntropyLoss()
+
+# 5- Define optimizer
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+# 6- Define the batch size
+batch_size = 25
+
+# 7- Create DataLoader for training dataset
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
+# 8-Training Loop
+total_step = len(train_loader)
+loss_list = []
+acc_list = []
+
+for epoch in range(num_epochs):
+    for i, (images, labels) in enumerate(train_loader):
+        # Forward pass
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss_list.append(loss.item())
+
+        # Backprop and optimization
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        # Train accuracy
+        total = labels.size(0)
+        _, predicted = torch.max(outputs.data, 1)
+        correct = (predicted == labels).sum().item()
+        acc_list.append(correct / total)
+
+        if (i + 1) % 100 == 0:
+            print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'.format(epoch + 1, num_epochs, i + 1,
+                                                                                        total_step, loss.item(),
+                                                                                        (correct / total) * 100))

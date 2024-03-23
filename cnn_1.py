@@ -16,7 +16,7 @@ class CNN_Module_1_twoLayers(nn.Module):
 
         self.fc_layer = nn.Sequential(
             nn.Dropout(p=0.1),
-            nn.Linear(32 * 56 * 56, 1000),  # Assuming output size after max pooling is 56x56
+            nn.Linear(32 * 112 * 112, 1000),
             nn.ReLU(inplace=True),
             nn.Linear(1000, 512),
             nn.ReLU(inplace=True),
@@ -32,3 +32,9 @@ class CNN_Module_1_twoLayers(nn.Module):
         # Fully connected layers
         x = self.fc_layer(x)
         return x
+
+
+
+
+
+
