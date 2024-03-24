@@ -1,8 +1,8 @@
 import torch.nn as nn
 
-class CNN_Module_1_twoLayers(nn.Module):
+class CNN_Module_1(nn.Module):
     def __init__(self, num_classes):
-        super(CNN_Module_1_twoLayers, self).__init__()
+        super(CNN_Module_1, self).__init__()
         self.conv_layer = nn.Sequential(
             # Conv2d creates a 2-dimensional convolutional layer for processing 2D input data (images)
             nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1),
