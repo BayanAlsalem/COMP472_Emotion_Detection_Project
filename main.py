@@ -16,20 +16,17 @@ import random
 from torchvision import transforms
 
 
-
 # 2-Define data directory
 data_dir = "C:/Users/User/PycharmProjects/COMP472_Emotion_Detection_Project/dataset"
 
 # 3-Define a transformation: transform for preprocessing the images
 data_transforms = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize to a common size
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),  # Convert to tensor
-    transforms.ConvertImageDtype(torch.float32),  # Ensure the image is float32
+    transforms.ConvertImageDtype(torch.float32),  # image is float32
     transforms.ColorJitter(brightness=0.5),  # Adjust brightness
-    # Normalize if you uncomment this. Adjust the mean and std if your RGB conversion needs it.
     # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
-
 
 # 4-Load dataset using PyTorch
 # ImageFolder dataset handles the mapping of class names to integer labels
@@ -57,72 +54,72 @@ test_dataset = Subset(dataset, test_indices)
 # ### Dataset Visualization: Class Distribution - 25 Sample Images - Pixel Intensity Distribution ####
 # ####################################################################################################
 
-# # 1- Class Distribution Visualization - bar graph
-# class_names = dataset.classes
-# class_counts = {class_name:0 for class_name in class_names}
-#
-# for _, index in dataset.samples:
-#     class_counts[class_names[index]] += 1
+# 1- Class Distribution Visualization - bar graph
+class_names = dataset.classes
+class_counts = {class_name:0 for class_name in class_names}
 
-# plt.figure(figsize=(8, 7))
-# plt.bar(class_counts.keys(), class_counts.values(), color='skyblue')
-# plt.xlabel('Class')
-# plt.ylabel('Number of images')
-# plt.title('Class Distribution')
-# plt.show()
-#
-# # 2- one pixel intensity distribution histogram for the 25 samples
-# def pixel_intensity_distribution(sample_images):
-#     # lists to accumulate pixel values for each channel
-#     pixels_red, pixels_green, pixels_blue = [], [], []
-#
-#     for img in sample_images:
-#         pixels_red.extend(img[0].flatten().numpy())
-#         pixels_green.extend(img[1].flatten().numpy())
-#         pixels_blue.extend(img[2].flatten().numpy())
+for _, index in dataset.samples:
+    class_counts[class_names[index]] += 1
 
-#     # Plotting the histogram
-#     plt.figure(figsize=(6, 4))
-#     plt.hist(pixels_red, bins=256, range=(0, 1), alpha=0.5, color='r', label='R channel')
-#     plt.hist(pixels_green, bins=256, range=(0, 1), alpha=0.5, color='g', label='G channel')
-#     plt.hist(pixels_blue, bins=256, range=(0, 1), alpha=0.5, color='b', label='B channel')
-#     plt.xlabel('Intensity Value')
-#     plt.ylabel('Frequency')
-#     plt.legend()
-#     plt.title('Pixel Intensity Distribution')
-#     plt.show()
-#
-# # 3-Display the 25 sample images and their intensity distribution histogram
-# def display_sample_images_and_intensity_distribution(dataset, selected_class_names, n_samples=25):
-#     for class_name in selected_class_names:
-#         class_indices = [i for i, sample in enumerate(dataset.samples) if dataset.classes[sample[1]] == class_name]
-#         if not class_indices:
-#             print(f"No samples found for class '{class_name}'. Skipping...")
-#             continue
-#
-#         sample_indices = random.sample(class_indices, min(len(class_indices), n_samples))
-#         sample_images = [dataset[idx][0] for idx in sample_indices]
-#
-#         # Display the sample images
-#         plt.figure(figsize=(8, 8))
-#         plt.suptitle(f'Sample Images for Class: {class_name}', fontsize=16)
-#
-#         for i in range(1, n_samples + 1):
-#             if i <= len(sample_images):
-#                 img = sample_images[i - 1]
-#                 plt.subplot(5, 5, i)
-#                 plt.imshow(img.permute(1, 2, 0))
-#                 plt.axis('off')
-#             else:
-#                 break  # Exit the loop if there are no more images to display
-#
-#         plt.show()
-#
-#         # For the same sample images, plot the combined pixel intensity distribution
-#         pixel_intensity_distribution(sample_images)
-#
-# selected_class_names = ['focused', 'happy', 'neutral', 'sad']
-# display_sample_images_and_intensity_distribution(dataset, selected_class_names)
+plt.figure(figsize=(8, 7))
+plt.bar(class_counts.keys(), class_counts.values(), color='skyblue')
+plt.xlabel('Class')
+plt.ylabel('Number of images')
+plt.title('Class Distribution')
+plt.show()
+
+# 2- one pixel intensity distribution histogram for the 25 samples
+def pixel_intensity_distribution(sample_images):
+    # lists to accumulate pixel values for each channel
+    pixels_red, pixels_green, pixels_blue = [], [], []
+
+    for img in sample_images:
+        pixels_red.extend(img[0].flatten().numpy())
+        pixels_green.extend(img[1].flatten().numpy())
+        pixels_blue.extend(img[2].flatten().numpy())
+
+    # Plotting the histogram
+    plt.figure(figsize=(6, 4))
+    plt.hist(pixels_red, bins=256, range=(0, 1), alpha=0.5, color='r', label='R channel')
+    plt.hist(pixels_green, bins=256, range=(0, 1), alpha=0.5, color='g', label='G channel')
+    plt.hist(pixels_blue, bins=256, range=(0, 1), alpha=0.5, color='b', label='B channel')
+    plt.xlabel('Intensity Value')
+    plt.ylabel('Frequency')
+    plt.legend()
+    plt.title('Pixel Intensity Distribution')
+    plt.show()
+
+# 3-Display the 25 sample images and their intensity distribution histogram
+def display_sample_images_and_intensity_distribution(dataset, selected_class_names, n_samples=25):
+    for class_name in selected_class_names:
+        class_indices = [i for i, sample in enumerate(dataset.samples) if dataset.classes[sample[1]] == class_name]
+        if not class_indices:
+            print(f"No samples found for class '{class_name}'. Skipping...")
+            continue
+
+        sample_indices = random.sample(class_indices, min(len(class_indices), n_samples))
+        sample_images = [dataset[idx][0] for idx in sample_indices]
+
+        # Display the sample images
+        plt.figure(figsize=(8, 8))
+        plt.suptitle(f'Sample Images for Class: {class_name}', fontsize=16)
+
+        for i in range(1, n_samples + 1):
+            if i <= len(sample_images):
+                img = sample_images[i - 1]
+                plt.subplot(5, 5, i)
+                plt.imshow(img.permute(1, 2, 0))
+                plt.axis('off')
+            else:
+                break  # Exit the loop if there are no more images to display
+
+        plt.show()
+
+        # For the same sample images, plot the combined pixel intensity distribution
+        pixel_intensity_distribution(sample_images)
+
+selected_class_names = ['focused', 'happy', 'neutral', 'sad']
+display_sample_images_and_intensity_distribution(dataset, selected_class_names)
 
 
 # ####################################################################################################
@@ -132,7 +129,8 @@ test_dataset = Subset(dataset, test_indices)
 # 1- hyper-parameters definition
 num_epochs = 10
 num_classes = 4
-learning_rate = 0.001
+learning_rate = 0.0001
+
 
 # 2-Import the cnn class
 from cnn_1 import CNN_Module_1
@@ -141,9 +139,9 @@ from cnn_3 import CNN_Module_3
 
 
 # 3-Instantiate the CNN model
-# model = CNN_Module_2_Layers(num_classes)
-# model = CNN_Module_2(num_classes)
-model = CNN_Module_3(num_classes)
+model = CNN_Module_1(num_classes)
+#model = CNN_Module_2(num_classes)
+# model = CNN_Module_3(num_classes)
 
 
 # 4-Define loss function
@@ -155,7 +153,7 @@ optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 # 6-Define the batch size
 batch_size = 32
 
-# 7- reate DataLoader for training and test dataset
+# 7-Create DataLoader for training and test dataset
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 print(len(train_dataset))
@@ -193,7 +191,7 @@ try:
                                                                                             total_step, loss.item(),
                                                                                             (correct / total) * 100))
 except Exception as e:
-    print("Error encountered: ", e)
+    print("Error encountered in the training loop: ", e)
 
 
 # 9-Model evaluation
@@ -201,7 +199,7 @@ model.eval()
 with torch.no_grad():
     correct = 0
     total = 0
-    for images, labels in test_loader:  # Ensure you have defined test_loader
+    for images, labels in test_loader:
         outputs = model(images)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)

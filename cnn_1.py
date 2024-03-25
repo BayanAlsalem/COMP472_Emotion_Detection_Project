@@ -25,12 +25,9 @@ class CNN_Module_1(nn.Module):
         )
 
     def forward(self, x):
-        # Convolutional layers
-        x = self.conv_layer(x)
-        # Flatten
-        x = x.view(x.size(0), -1)
-        # Fully connected layers
-        x = self.fc_layer(x)
+        x = self.conv_layer(x)  # Pass input through conv_layer
+        x = x.view(x.size(0), -1)  # Flatten the output for the fc_layer
+        x = self.fc_layer(x)  # Pass through fc_layer
         return x
 
 
