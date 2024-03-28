@@ -158,13 +158,14 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, pin_
 print("Train dataset length: ", len(train_dataset))
 print("Test dataset length: ", len(test_dataset))
 
-# 8-Training Loop
+# 8-Training Loop and track the best accuracy for early stopping
 total_step = len(train_loader)
 loss_list = []
 acc_list = []
 
-# Track the best accuracy for early stopping
 best_accuracy = 0
+patience = 5 # I had 3, it kept stopping
+early_stopping_counter = 0
 
 print("Starting training loop...")
 for epoch in range(num_epochs):
@@ -209,9 +210,14 @@ for epoch in range(num_epochs):
         # Check for early stopping
         if accuracy > best_accuracy:
             best_accuracy = accuracy
+            early_stopping_counter = 0
             # Save the model
             torch.save(model.state_dict(), 'best_model.pth')
-
+        else:
+            early_stopping_counter += 1
+            if early_stopping_counter >= patience:
+                print("Early stopping triggered!")
+                break
 
     model.train()
     if (i + 1) % 100 == 0:
