@@ -166,7 +166,6 @@ acc_list = []
 # Track the best accuracy for early stopping
 best_accuracy = 0
 
-
 print("Starting training loop...")
 for epoch in range(num_epochs):
     print(f"Inside epoch loop, epoch: {epoch}")
@@ -224,3 +223,47 @@ for epoch in range(num_epochs):
 best_model = CNN_Module_4(num_classes)
 best_model.load_state_dict(torch.load('best_model.pth'))
 best_model.eval()
+
+# 10-Evaluation on test set
+test_predictions = []
+test_labels = []
+for images, labels in test_loader:
+    outputs = best_model(images)
+    _, predicted = torch.max(outputs.data, 1)
+    test_predictions.extend(predicted.cpu().numpy())
+    test_labels.extend(labels.cpu().numpy())
+
+# 11-Compute evaluation metrics
+test_accuracy = accuracy_score(test_labels, test_predictions)
+# Macro averages
+test_precision_macro = precision_score(test_labels, test_predictions, average='macro')
+test_recall_macro = recall_score(test_labels, test_predictions, average='macro')
+test_f1_score_macro = f1_score(test_labels, test_predictions, average='macro')
+
+# Micro averages
+test_precision_micro = precision_score(test_labels, test_predictions, average='micro')
+test_recall_micro = recall_score(test_labels, test_predictions, average='micro')
+test_f1_score_micro = f1_score(test_labels, test_predictions, average='micro')
+
+conf_matrix = confusion_matrix(test_labels, test_predictions)
+
+# 12-Display confusion matrix
+plt.figure(figsize=(8, 6))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
+
+# Save the confusion matrix as an image
+plt.savefig('confusion_matrix.png')
+
+# 14-Metrics summary
+metrics_summary = pd.DataFrame({
+    'Metric': ['Accuracy', 'Precision (Macro)', 'Recall (Macro)', 'F1-Score (Macro)',
+            'Precision (Micro)', 'Recall (Micro)', 'F1-Score (Micro)'],
+    'Value': [test_accuracy, test_precision_macro, test_recall_macro, test_f1_score_macro,
+            test_precision_micro, test_recall_micro, test_f1_score_micro]
+})
+print("Metrics Summary:")
+print(metrics_summary)
