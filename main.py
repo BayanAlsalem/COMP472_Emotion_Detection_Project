@@ -1,166 +1,275 @@
-import os
-import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
+# ####################################################################################################
+# ################################ Data cleaning and Data Labeling ###################################
+# ####################################################################################################
+
+# 1-Import necessary libraries
+import torch
+from matplotlib import pyplot as plt
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from torch import random
+from torchvision import datasets, transforms
+from sklearn.model_selection import train_test_split
+from torch.utils.data import Subset
+import torch.optim as optim
+import torch.nn as nn
+from torch.utils.data import DataLoader
+import random
 from torchvision import transforms
-
-# Set the dataset path
-dataset_path = r'C:\Users\User\PycharmProjects\COMP472_Emotion_Detection_Project\dataset'
-
-# Define the classes or labels and dataset types (train/test)
-classes = ['happy', 'neutral', 'surprised', 'focused']
-dataset_types = ['train', 'test']
-
-# This is a function definition to load and process the data.
-# It takes the base path of the dataset, the type of dataset
-# (train or test), and the transform operations to apply to the images.
-def load_and_process_data(base_path, dataset_type, transform):
-    # Initializes empty lists to hold the processed images and their corresponding labels.
-    data = []
-    labels = []
-
-    for class_index, class_name in enumerate(classes):
-        class_path = os.path.join(base_path, dataset_type, class_name)
-        # Loops over each image in the class directory.
-        for img_name in os.listdir(class_path):
-            try:
-                img_path = os.path.join(class_path, img_name)
-                img = Image.open(img_path).convert('RGB')  # Ensure image is RGB
-                img = transform(img)  # Apply preprocessing
-                # Appends the processed image to the data
-                # list and its label to the labels list.
-                data.append(img)
-                labels.append(class_index)
-
-            except IOError:
-                print(f'Error loading image: {img_path}')
-
-    return data, labels
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
-# Define a transform for preprocessing the images
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # Resize to a common size
+
+# 2-Define data directory
+data_dir = "C:/Users/User/PycharmProjects/COMP472_Emotion_Detection_Project/dataset"
+
+# 3-Define a transformation: transform for preprocessing the images
+data_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),  # Convert to tensor
+    transforms.ConvertImageDtype(torch.float32),  # image is float32
+    transforms.ColorJitter(brightness=0.5),  # Adjust brightness
+    # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# Load and process the training and testing data
-train_data, train_labels = load_and_process_data(dataset_path, 'train', transform)
-test_data, test_labels = load_and_process_data(dataset_path, 'test', transform)
+# 4-Load dataset using PyTorch
+# ImageFolder dataset handles the mapping of class names to integer labels
+dataset = datasets.ImageFolder(root=data_dir, transform=data_transforms)
 
-# Convert lists to numpy arrays for EDA
-train_labels_np = np.array(train_labels)
-test_labels_np = np.array(test_labels)
+# 5-Extract data (images) and targets (labels) from the dataset for splitting
+data = [s[0] for s in dataset.samples]
+targets = [s[1] for s in dataset.samples]
 
-# # EDA: Plot class distribution for training data
-# plt.hist(train_labels_np, bins=np.arange(len(classes) + 1), align='left', rwidth=0.4)
-# plt.xticks(ticks=np.arange(len(classes)), labels=classes)
-# plt.title('Class Distribution in Training Data')
-# plt.show()
-#
-# # EDA: Plot class distribution for testing data
-# plt.hist(test_labels_np, bins=np.arange(len(classes) + 1), align='left', rwidth=0.4)
-# plt.xticks(ticks=np.arange(len(classes)), labels=classes)
-# plt.title('Class Distribution in Testing Data')
-# plt.show()
+# 6-Split the dataset into training, validation, and test sets using train_test_split function from scikit-learn.
+# the split ratios are 70% for training, 15% for validation, and 15% for testing.
+# in the lab exercise, random_state =1 but I did some research and sometimes they use higher values
+train_indices, temp_indices = train_test_split(range(len(dataset)), test_size=0.3, random_state=1)
+val_indices, test_indices = train_test_split(temp_indices, test_size=0.5, random_state=1)
 
-######################################################
-###### STEP 1: SHOW ALL COUNT OF ALL CLASSES ########
-######################################################
 
-# Count images in each class for both training and testing data
-train_counts = [sum(train_labels_np == i) for i in range(len(classes))]
-test_counts = [sum(test_labels_np == i) for i in range(len(classes))]
-
-# # Defining the width of the bars (using the same width as before for consistency)
-# width = 0.35
-#
-# # Plotting the bar graph
-# plt.figure(figsize=(12, 8))
-# bars1 = plt.bar(classes, train_counts, width, label='Training Data', color='skyblue')
-# bars2 = plt.bar(classes, test_counts, width, bottom=train_counts, label='Test Data', color='orange')
-#
-# plt.xlabel('Class Names')
-# plt.ylabel('Number of Images')
-# plt.title('Class Distribution in Dataset: Combined Training and Test Data')
-# plt.legend()
-# plt.show()
+# 7-Create subsets for training, validation, and testing
+train_dataset = Subset(dataset, train_indices)
+val_dataset = Subset(dataset, val_indices)
+test_dataset = Subset(dataset, test_indices)
 
 
 
-# Calculating positions for each set of bars
-x = np.arange(len(classes))  # the label locations
-width = 0.35  # the width of the bars
+# ####################################################################################################
+# ### Dataset Visualization: Class Distribution - 25 Sample Images - Pixel Intensity Distribution ####
+# ####################################################################################################
 
-# Plotting the bar graph for both training and test data
-plt.figure(figsize=(12, 8))
-bars1 = plt.bar(x - width/2, train_counts, width, label='Training Data', color='skyblue')
-bars2 = plt.bar(x + width/2, test_counts, width, label='Test Data', color='orange')
+# 1- Class Distribution Visualization - bar graph
+class_names = dataset.classes
+class_counts = {class_name:0 for class_name in class_names}
 
-# Adding some text for labels, title and custom x-axis tick labels, etc.
-plt.xlabel('Class Names')
-plt.ylabel('Number of Images')
-plt.title('Class Distribution in Dataset: Training vs Test Data')
-plt.xticks(ticks=x, labels=classes)
-plt.legend()
+for _, index in dataset.samples:
+    class_counts[class_names[index]] += 1
 
+plt.figure(figsize=(8, 7))
+plt.bar(class_counts.keys(), class_counts.values(), color='skyblue')
+plt.xlabel('Class')
+plt.ylabel('Number of images')
+plt.title('Class Distribution')
 plt.show()
 
+# 2- one pixel intensity distribution histogram for the 25 samples
+def pixel_intensity_distribution(sample_images):
+    # lists to accumulate pixel values for each channel
+    pixels_red, pixels_green, pixels_blue = [], [], []
 
-######################################################
-# STEP 2: SHOW SAMPLE 5X5 TRAIN DATA OF ALL CLASSES #
-######################################################
+    for img in sample_images:
+        pixels_red.extend(img[0].flatten().numpy())
+        pixels_green.extend(img[1].flatten().numpy())
+        pixels_blue.extend(img[2].flatten().numpy())
 
-# Number of images and grid size
-num_images = 25
-grid_size = (5, 5)
-
-for i in range(len(classes)):
-    # Get the indices of images belonging to the current class in the training data
-    class_indices = np.where(train_labels_np == i)[0]
-    # Randomly select 25 indices
-    selected_indices = np.random.choice(class_indices, num_images, replace=False)
-
-    # Plotting the images in a 5x5 grid
-    fig, axes = plt.subplots(5, 5, figsize=(8, 8))
-    fig.suptitle('25 Random Sample Images for `' + classes[i] + '` class')
-
-    # Adjust layout
-    plt.subplots_adjust(wspace=0, hspace=0)
-
-    for ax, idx in zip(axes.flatten(), selected_indices):
-        # Load the image from the training data
-        img = train_data[idx].permute(1, 2, 0)  # Convert tensor back to PIL image format
-
-        # Display the image
-        ax.imshow(img)
-        ax.axis('off')  # Hide axes
-
-    plt.show()
-
-    ######################################################
-    # STEP 3: Pixel Intensity #
-    ######################################################
-
-    red_pixels = []
-    green_pixels = []
-    blue_pixels = []
-    for ax, idx in zip(axes.flatten(), selected_indices):
-        # Convert tensor to PIL format by permuting and then converting to numpy
-        img_np = train_data[idx].permute(1, 2, 0).numpy()
-
-        # Extracting RGB channels
-        red_pixels.extend(img_np[:, :, 0].flatten())
-        green_pixels.extend(img_np[:, :, 1].flatten())
-        blue_pixels.extend(img_np[:, :, 2].flatten())
-
-    # Plotting histograms
-    plt.figure(figsize=(10, 6))
-    plt.hist(red_pixels, bins=256, color='red', alpha=0.5, label='Red Channel')
-    plt.hist(green_pixels, bins=256, color='green', alpha=0.5, label='Green Channel')
-    plt.hist(blue_pixels, bins=256, color='blue', alpha=0.5, label='Blue Channel')
-    plt.title('Pixel Intensity Distribution for RGB Channels')
-    plt.xlabel('Pixel Intensity')
+    # Plotting the histogram
+    plt.figure(figsize=(6, 4))
+    plt.hist(pixels_red, bins=256, range=(0, 1), alpha=0.5, color='r', label='R channel')
+    plt.hist(pixels_green, bins=256, range=(0, 1), alpha=0.5, color='g', label='G channel')
+    plt.hist(pixels_blue, bins=256, range=(0, 1), alpha=0.5, color='b', label='B channel')
+    plt.xlabel('Intensity Value')
     plt.ylabel('Frequency')
-    plt.legend(loc='upper right')
+    plt.legend()
+    plt.title('Pixel Intensity Distribution')
     plt.show()
+
+# 3-Display the 25 sample images and their intensity distribution histogram
+def display_sample_images_and_intensity_distribution(dataset, selected_class_names, n_samples=25):
+    for class_name in selected_class_names:
+        class_indices = [i for i, sample in enumerate(dataset.samples) if dataset.classes[sample[1]] == class_name]
+        if not class_indices:
+            print(f"No samples found for class '{class_name}'. Skipping...")
+            continue
+
+        sample_indices = random.sample(class_indices, min(len(class_indices), n_samples))
+        sample_images = [dataset[idx][0] for idx in sample_indices]
+
+        # Display the sample images
+        plt.figure(figsize=(8, 8))
+        plt.suptitle(f'Sample Images for Class: {class_name}', fontsize=16)
+
+        for i in range(1, n_samples + 1):
+            if i <= len(sample_images):
+                img = sample_images[i - 1]
+                plt.subplot(5, 5, i)
+                plt.imshow(img.permute(1, 2, 0))
+                plt.axis('off')
+            else:
+                break  # Exit the loop if there are no more images to display
+
+        plt.show()
+
+        # For the same sample images, plot the combined pixel intensity distribution
+        pixel_intensity_distribution(sample_images)
+
+selected_class_names = ['focused', 'happy', 'neutral', 'sad']
+display_sample_images_and_intensity_distribution(dataset, selected_class_names)
+
+
+
+# ####################################################################################################
+# ########################### CNN model Hyperparameters and training loop ############################
+# ####################################################################################################
+
+# 1- hyper-parameters definition
+num_epochs = 10
+num_classes = 4
+learning_rate = 0.0001
+
+# 2-Import the cnn class
+from cnn_4 import CNN_Module_4
+
+# 3-Instantiate the CNN model
+model = CNN_Module_4(num_classes)
+
+# 4-Define loss function
+criterion = nn.CrossEntropyLoss()
+
+# 5-Define optimizer
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+# 6-Define the batch size
+batch_size = 32
+
+# 7-Create DataLoader for training and test dataset
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
+print("Train dataset length: ", len(train_dataset))
+print("Test dataset length: ", len(test_dataset))
+
+# 8-Training Loop and track the best accuracy for early stopping
+total_step = len(train_loader)
+loss_list = []
+acc_list = []
+
+best_accuracy = 0
+patience = 5 # I had 3, it kept stopping
+early_stopping_counter = 0
+
+print("Starting training loop...")
+for epoch in range(num_epochs):
+    print(f"Inside epoch loop, epoch: {epoch}")
+
+    running_loss = 0
+    for i, (images, labels) in enumerate(train_loader):
+        print(f"Inside loop, Batch: {i}")
+        # Forward pass
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss_list.append(loss.item())
+
+        # Backprop and optimization
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+
+        # Train accuracy
+        total = labels.size(0)
+        _, predicted = torch.max(outputs.data, 1)
+        correct = (predicted == labels).sum().item()
+        acc_list.append(correct / total)
+
+    print("The average running loss per batch over the entire training dataset.", running_loss / len(train_loader))
+
+    # Model evaluation on validation set
+    model.eval()
+    with torch.no_grad():
+        correct = 0
+        total = 0
+        for images, labels in test_loader:
+            outputs = model(images)
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+        accuracy = correct / total
+        print('Validation Accuracy: {:.2f} %'.format((accuracy) * 100))
+
+        # Check for early stopping
+        if accuracy > best_accuracy:
+            best_accuracy = accuracy
+            early_stopping_counter = 0
+            # Save the model
+            torch.save(model.state_dict(), 'best_model.pth')
+        else:
+            early_stopping_counter += 1
+            if early_stopping_counter >= patience:
+                print("Early stopping triggered!")
+                break
+
+    model.train()
+    if (i + 1) % 100 == 0:
+        print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'.format(epoch + 1, num_epochs, i + 1,
+                                                                                        total_step, loss.item(),
+                                                                                        accuracy * 100))
+
+# 9- Load the best model for evaluation
+best_model = CNN_Module_4(num_classes)
+best_model.load_state_dict(torch.load('best_model.pth'))
+best_model.eval()
+
+# 10-Evaluation on test set
+test_predictions = []
+test_labels = []
+for images, labels in test_loader:
+    outputs = best_model(images)
+    _, predicted = torch.max(outputs.data, 1)
+    test_predictions.extend(predicted.cpu().numpy())
+    test_labels.extend(labels.cpu().numpy())
+
+# 11-Compute evaluation metrics
+test_accuracy = accuracy_score(test_labels, test_predictions)
+# Macro averages
+test_precision_macro = precision_score(test_labels, test_predictions, average='macro')
+test_recall_macro = recall_score(test_labels, test_predictions, average='macro')
+test_f1_score_macro = f1_score(test_labels, test_predictions, average='macro')
+
+# Micro averages
+test_precision_micro = precision_score(test_labels, test_predictions, average='micro')
+test_recall_micro = recall_score(test_labels, test_predictions, average='micro')
+test_f1_score_micro = f1_score(test_labels, test_predictions, average='micro')
+
+conf_matrix = confusion_matrix(test_labels, test_predictions)
+
+# 12-Display confusion matrix
+plt.figure(figsize=(8, 6))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False)
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.title('Confusion Matrix')
+plt.show()
+
+# Save the confusion matrix as an image
+plt.savefig('confusion_matrix.png')
+
+# 14-Metrics summary
+metrics_summary = pd.DataFrame({
+    'Metric': ['Accuracy', 'Precision (Macro)', 'Recall (Macro)', 'F1-Score (Macro)',
+            'Precision (Micro)', 'Recall (Micro)', 'F1-Score (Micro)'],
+    'Value': [test_accuracy, test_precision_macro, test_recall_macro, test_f1_score_macro,
+            test_precision_micro, test_recall_micro, test_f1_score_micro]
+})
+print("Metrics Summary:")
+print(metrics_summary)
