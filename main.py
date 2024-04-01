@@ -59,73 +59,73 @@ test_dataset = Subset(dataset, test_indices)
 # ### Dataset Visualization: Class Distribution - 25 Sample Images - Pixel Intensity Distribution ####
 # ####################################################################################################
 
-# 1- Class Distribution Visualization - bar graph
-class_names = dataset.classes
-class_counts = {class_name:0 for class_name in class_names}
-
-for _, index in dataset.samples:
-    class_counts[class_names[index]] += 1
-
-plt.figure(figsize=(8, 7))
-plt.bar(class_counts.keys(), class_counts.values(), color='skyblue')
-plt.xlabel('Class')
-plt.ylabel('Number of images')
-plt.title('Class Distribution')
-plt.show()
-
-# 2- one pixel intensity distribution histogram for the 25 samples
-def pixel_intensity_distribution(sample_images):
-    # lists to accumulate pixel values for each channel
-    pixels_red, pixels_green, pixels_blue = [], [], []
-
-    for img in sample_images:
-        pixels_red.extend(img[0].flatten().numpy())
-        pixels_green.extend(img[1].flatten().numpy())
-        pixels_blue.extend(img[2].flatten().numpy())
-
-    # Plotting the histogram
-    plt.figure(figsize=(6, 4))
-    plt.hist(pixels_red, bins=256, range=(0, 1), alpha=0.5, color='r', label='R channel')
-    plt.hist(pixels_green, bins=256, range=(0, 1), alpha=0.5, color='g', label='G channel')
-    plt.hist(pixels_blue, bins=256, range=(0, 1), alpha=0.5, color='b', label='B channel')
-    plt.xlabel('Intensity Value')
-    plt.ylabel('Frequency')
-    plt.legend()
-    plt.title('Pixel Intensity Distribution')
-    plt.show()
-
-# 3-Display the 25 sample images and their intensity distribution histogram
-def display_sample_images_and_intensity_distribution(dataset, selected_class_names, n_samples=25):
-    for class_name in selected_class_names:
-        class_indices = [i for i, sample in enumerate(dataset.samples) if dataset.classes[sample[1]] == class_name]
-        if not class_indices:
-            print(f"No samples found for class '{class_name}'. Skipping...")
-            continue
-
-        sample_indices = random.sample(class_indices, min(len(class_indices), n_samples))
-        sample_images = [dataset[idx][0] for idx in sample_indices]
-
-        # Display the sample images
-        plt.figure(figsize=(8, 8))
-        plt.suptitle(f'Sample Images for Class: {class_name}', fontsize=16)
-
-        for i in range(1, n_samples + 1):
-            if i <= len(sample_images):
-                img = sample_images[i - 1]
-                plt.subplot(5, 5, i)
-                plt.imshow(img.permute(1, 2, 0))
-                plt.axis('off')
-            else:
-                break  # Exit the loop if there are no more images to display
-
-        plt.show()
-
-        # For the same sample images, plot the combined pixel intensity distribution
-        pixel_intensity_distribution(sample_images)
-
-selected_class_names = ['focused', 'happy', 'neutral', 'sad']
-display_sample_images_and_intensity_distribution(dataset, selected_class_names)
-
+# # 1- Class Distribution Visualization - bar graph
+# class_names = dataset.classes
+# class_counts = {class_name:0 for class_name in class_names}
+#
+# for _, index in dataset.samples:
+#     class_counts[class_names[index]] += 1
+#
+# plt.figure(figsize=(8, 7))
+# plt.bar(class_counts.keys(), class_counts.values(), color='skyblue')
+# plt.xlabel('Class')
+# plt.ylabel('Number of images')
+# plt.title('Class Distribution')
+# plt.show()
+#
+# # 2- one pixel intensity distribution histogram for the 25 samples
+# def pixel_intensity_distribution(sample_images):
+#     # lists to accumulate pixel values for each channel
+#     pixels_red, pixels_green, pixels_blue = [], [], []
+#
+#     for img in sample_images:
+#         pixels_red.extend(img[0].flatten().numpy())
+#         pixels_green.extend(img[1].flatten().numpy())
+#         pixels_blue.extend(img[2].flatten().numpy())
+#
+#     # Plotting the histogram
+#     plt.figure(figsize=(6, 4))
+#     plt.hist(pixels_red, bins=256, range=(0, 1), alpha=0.5, color='r', label='R channel')
+#     plt.hist(pixels_green, bins=256, range=(0, 1), alpha=0.5, color='g', label='G channel')
+#     plt.hist(pixels_blue, bins=256, range=(0, 1), alpha=0.5, color='b', label='B channel')
+#     plt.xlabel('Intensity Value')
+#     plt.ylabel('Frequency')
+#     plt.legend()
+#     plt.title('Pixel Intensity Distribution')
+#     plt.show()
+#
+# # 3-Display the 25 sample images and their intensity distribution histogram
+# def display_sample_images_and_intensity_distribution(dataset, selected_class_names, n_samples=25):
+#     for class_name in selected_class_names:
+#         class_indices = [i for i, sample in enumerate(dataset.samples) if dataset.classes[sample[1]] == class_name]
+#         if not class_indices:
+#             print(f"No samples found for class '{class_name}'. Skipping...")
+#             continue
+#
+#         sample_indices = random.sample(class_indices, min(len(class_indices), n_samples))
+#         sample_images = [dataset[idx][0] for idx in sample_indices]
+#
+#         # Display the sample images
+#         plt.figure(figsize=(8, 8))
+#         plt.suptitle(f'Sample Images for Class: {class_name}', fontsize=16)
+#
+#         for i in range(1, n_samples + 1):
+#             if i <= len(sample_images):
+#                 img = sample_images[i - 1]
+#                 plt.subplot(5, 5, i)
+#                 plt.imshow(img.permute(1, 2, 0))
+#                 plt.axis('off')
+#             else:
+#                 break  # Exit the loop if there are no more images to display
+#
+#         plt.show()
+#
+#         # For the same sample images, plot the combined pixel intensity distribution
+#         pixel_intensity_distribution(sample_images)
+#
+# selected_class_names = ['focused', 'happy', 'neutral', 'sad']
+# display_sample_images_and_intensity_distribution(dataset, selected_class_names)
+#
 
 
 # ####################################################################################################
@@ -133,15 +133,20 @@ display_sample_images_and_intensity_distribution(dataset, selected_class_names)
 # ####################################################################################################
 
 # 1- hyper-parameters definition
-num_epochs = 10
+num_epochs = 15
 num_classes = 4
-learning_rate = 0.0001
+# learning_rate = 0.0001 # For cnn_4 and cnn_var_1
+learning_rate = 0.00001 # For cnn_var_2
 
 # 2-Import the cnn class
 from cnn_4 import CNN_Module_4
+from cnn_var_1 import CNN_VAR_1
+from cnn_var_2 import CNN_VAR_2
 
 # 3-Instantiate the CNN model
-model = CNN_Module_4(num_classes)
+# model = CNN_Module_4(num_classes)
+# model = CNN_VAR_1(num_classes)
+model = CNN_VAR_2(num_classes)
 
 # 4-Define loss function
 criterion = nn.CrossEntropyLoss()
@@ -164,8 +169,8 @@ loss_list = []
 acc_list = []
 
 best_accuracy = 0
-patience = 5 # I had 3, it kept stopping
-early_stopping_counter = 0
+# patience = 3
+# early_stopping_counter = 0
 
 print("Starting training loop...")
 for epoch in range(num_epochs):
@@ -205,19 +210,19 @@ for epoch in range(num_epochs):
             correct += (predicted == labels).sum().item()
 
         accuracy = correct / total
-        print('Validation Accuracy: {:.2f} %'.format((accuracy) * 100))
+        print('Validation Accuracy: {:.4f} %'.format((accuracy) * 100))
 
         # Check for early stopping
         if accuracy > best_accuracy:
             best_accuracy = accuracy
-            early_stopping_counter = 0
+            # early_stopping_counter = 0
             # Save the model
             torch.save(model.state_dict(), 'best_model.pth')
-        else:
-            early_stopping_counter += 1
-            if early_stopping_counter >= patience:
-                print("Early stopping triggered!")
-                break
+        # else:
+        #     early_stopping_counter += 1
+        #     if early_stopping_counter >= patience:
+        #         print("Early stopping triggered!")
+        #         break
 
     model.train()
     if (i + 1) % 100 == 0:
@@ -226,7 +231,9 @@ for epoch in range(num_epochs):
                                                                                         accuracy * 100))
 
 # 9- Load the best model for evaluation
-best_model = CNN_Module_4(num_classes)
+#best_model = CNN_Module_4(num_classes)
+# best_model = CNN_VAR_1(num_classes)
+best_model = CNN_VAR_2(num_classes)
 best_model.load_state_dict(torch.load('best_model.pth'))
 best_model.eval()
 
@@ -241,6 +248,7 @@ for images, labels in test_loader:
 
 # 11-Compute evaluation metrics
 test_accuracy = accuracy_score(test_labels, test_predictions)
+
 # Macro averages
 test_precision_macro = precision_score(test_labels, test_predictions, average='macro')
 test_recall_macro = recall_score(test_labels, test_predictions, average='macro')
@@ -261,10 +269,9 @@ plt.ylabel('True Labels')
 plt.title('Confusion Matrix')
 plt.show()
 
-# Save the confusion matrix as an image
-plt.savefig('confusion_matrix.png')
 
-# 14-Metrics summary
+
+# 13-Metrics summary
 metrics_summary = pd.DataFrame({
     'Metric': ['Accuracy', 'Precision (Macro)', 'Recall (Macro)', 'F1-Score (Macro)',
             'Precision (Micro)', 'Recall (Micro)', 'F1-Score (Micro)'],
@@ -273,3 +280,4 @@ metrics_summary = pd.DataFrame({
 })
 print("Metrics Summary:")
 print(metrics_summary)
+
