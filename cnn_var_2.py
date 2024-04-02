@@ -9,8 +9,8 @@ import torch.nn.functional as F
 
 # Remarks:
 # The training was very fast
-#  Accuracy   0.486667
-# Learning rate 0.00001
+#  Accuracy   0.630000
+# Learning rate 1e-4
 
 class CNN_VAR_2(nn.Module):
     def __init__(self, num_classes):
