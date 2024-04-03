@@ -5,16 +5,18 @@ import torch.nn.functional as F
 # This is a variant 2 from cnn_4.
 # A new convolution layer was added
 # In the first layer, stride is 2
-# We will change the learning rate
+# We will change the learning rate and the epoch number
 
 # Remarks:
 # The training was very fast
 #  Accuracy   0.630000
 # Learning rate 1e-4
 
+
 class CNN_VAR_2(nn.Module):
     def __init__(self, num_classes):
         super(CNN_VAR_2, self).__init__()
+
         self.conv0 = nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1)
         self.bn0 = nn.BatchNorm2d(32)
 

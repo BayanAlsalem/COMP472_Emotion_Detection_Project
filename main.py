@@ -317,7 +317,7 @@ plt.show()  # If you want to display it as well
 
 
 
-# 14-Metrics summary
+# 13-Metrics summary
 metrics_summary = pd.DataFrame({
     'Metric': ['Accuracy', 'Precision (Macro)', 'Recall (Macro)', 'F1-Score (Macro)',
             'Precision (Micro)', 'Recall (Micro)', 'F1-Score (Micro)'],

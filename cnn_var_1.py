@@ -13,6 +13,7 @@ import torch.nn.functional as F
 class CNN_VAR_1(nn.Module):
     def __init__(self, num_classes):
         super(CNN_VAR_1, self).__init__()
+
         self.conv0 = nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1)
         self.bn0 = nn.BatchNorm2d(32)
 
@@ -25,7 +26,7 @@ class CNN_VAR_1(nn.Module):
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
         self.bn3 = nn.BatchNorm2d(128)
 
-        self.fc1 = nn.Linear(6272, 1024)  # Adjusted from 128 * 28 * 28 to 6272
+        self.fc1 = nn.Linear(128 * 49 * 49, 1024)
         self.fc2 = nn.Linear(1024, num_classes)
 
         self.pool = nn.MaxPool2d(2, 2)
