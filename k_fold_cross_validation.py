@@ -40,35 +40,3 @@ class CNN_VAR_2(nn.Module):
         x = F.dropout(x, 0.5, training=self.training)
         x = self.fc2(x)
         return x
-
-
-# Function for k-fold cross-validation
-def k_fold_cross_validation(model, dataset, num_classes, num_epochs=10, num_folds=10):
-    paths, labels = zip(*dataset.imgs)
-    kf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=42)
-
-
-
-    for fold, (train_index, test_index) in enumerate(kf.split(paths, labels), 1):
-        print(f'Fold {fold}')
-        train_dataset = Subset(dataset, train_index)
-        test_dataset = Subset(dataset, test_index)
-        train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=32)
-        model = CNN_VAR_2(num_classes)
-        criterion = nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-        for epoch in range(num_epochs):
-            model.train()
-            for inputs, labels in train_loader:
-                optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-
-
-
-
-
