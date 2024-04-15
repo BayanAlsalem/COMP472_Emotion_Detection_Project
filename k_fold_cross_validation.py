@@ -53,7 +53,16 @@ def evaluate_model(model, dataloader):
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
 
+    accuracy = accuracy_score(all_labels, all_preds)
+    macro_precision = precision_score(all_labels, all_preds, average='macro',zero_division=0)
+    macro_recall = recall_score(all_labels, all_preds, average='macro',zero_division=0)
+    macro_f1 = f1_score(all_labels, all_preds, average='macro',zero_division=0)
 
+    micro_precision = precision_score(all_labels, all_preds, average='micro',zero_division=0)
+    micro_recall = recall_score(all_labels, all_preds, average='micro',zero_division=0)
+    micro_f1 = f1_score(all_labels, all_preds, average='micro',zero_division=0)
+
+    return accuracy, macro_precision, macro_recall, macro_f1, micro_precision, micro_recall, micro_f1
 
 
 # Function for k-fold cross-validation
@@ -61,7 +70,13 @@ def k_fold_cross_validation(model, dataset, num_classes, num_epochs=10, num_fold
     paths, labels = zip(*dataset.imgs)
     kf = StratifiedKFold(n_splits=num_folds, shuffle=True, random_state=42)
 
-
+    macro_precision_list = []
+    macro_recall_list = []
+    macro_f1_list = []
+    micro_precision_list = []
+    micro_recall_list = []
+    micro_f1_list = []
+    accuracy_list = []
 
     for fold, (train_index, test_index) in enumerate(kf.split(paths, labels), 1):
         print(f'Fold {fold}')
@@ -82,4 +97,28 @@ def k_fold_cross_validation(model, dataset, num_classes, num_epochs=10, num_fold
                 loss.backward()
                 optimizer.step()
 
+        accuracy, macro_precision, macro_recall, macro_f1, micro_precision, micro_recall, micro_f1 = evaluate_model(model, test_loader)
+        accuracy_list.append(accuracy)
+        macro_precision_list.append(macro_precision)
+        macro_recall_list.append(macro_recall)
+        macro_f1_list.append(macro_f1)
+        micro_precision_list.append(micro_precision)
+        micro_recall_list.append(micro_recall)
+        micro_f1_list.append(micro_f1)
+
+        print(f'Accuracy: {accuracy:.4f}, Macro Precision: {macro_precision:.4f}, Macro Recall: {macro_recall:.4f}, Macro F1: {macro_f1:.4f}')
+        print(f'Micro Precision: {micro_precision:.4f}, Micro Recall: {micro_recall:.4f}, Micro F1: {micro_f1:.4f}')
+
+    avg_accuracy = np.mean(accuracy_list)
+    avg_macro_precision = np.mean(macro_precision_list)
+    avg_macro_recall = np.mean(macro_recall_list)
+    avg_macro_f1 = np.mean(macro_f1_list)
+    avg_micro_precision = np.mean(micro_precision_list)
+    avg_micro_recall = np.mean(micro_recall_list)
+    avg_micro_f1 = np.mean(micro_f1_list)
+
+    print("\nAverage Evaluation Metrics across 10 folds:")
+    print(f"Average Macro Precision: {avg_macro_precision}, Average Macro Recall: {avg_macro_recall}, Average Macro F1-score: {avg_macro_f1}")
+    print(f"Average Micro Precision: {avg_micro_precision}, Average Micro Recall: {avg_micro_recall}, Average Micro F1-score: {avg_micro_f1}")
+    print(f"Average Accuracy: {avg_accuracy}")
 
