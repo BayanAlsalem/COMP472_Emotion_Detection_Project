@@ -22,7 +22,6 @@ import matplotlib.pyplot as plt
 
 
 # 2-Define data directory
-#data_dir = "C:/Users/User/PycharmProjects/COMP472_Emotion_Detection_Project/dataset"
 data_dir = "dataset"
 
 
@@ -170,10 +169,6 @@ total_step = len(train_loader)
 loss_list = []
 acc_list = []
 
-#best_accuracy = 0
-# patience = 3
-# early_stopping_counter = 0
-
 # Initialize early stopping parameters
 best_accuracy = None
 best_epoch = 0
@@ -220,7 +215,7 @@ for epoch in range(num_epochs):
         accuracy = correct / total
         print('Validation Accuracy: {:.4f} %'.format((accuracy) * 100))
 
-         # Early stopping check
+        # Early stopping check
         if best_accuracy is None or accuracy > best_accuracy:
             best_accuracy = accuracy
             best_epoch = epoch
@@ -232,17 +227,7 @@ for epoch in range(num_epochs):
                 print(f"Early stopping triggered at epoch {epoch+1}. Best score achieved at epoch {best_epoch+1}.")
                 break  # Stop training
 
-        # # Check for early stopping
-        # if accuracy > best_accuracy:
-        #     best_accuracy = accuracy
-        #     # early_stopping_counter = 0
-        #     # Save the model
-        #     torch.save(model.state_dict(), 'best_model.pth')
-        # else:
-        #     early_stopping_counter += 1
-        #     if early_stopping_counter >= patience:
-        #         print("Early stopping triggered!")
-        #         break
+
 
     model.train()
     if (i + 1) % 100 == 0:
@@ -302,19 +287,6 @@ plt.title('Confusion Matrix with Class Names')
 # Save the figure
 plt.savefig('best_model_confusion_matrix.png', bbox_inches='tight')
 plt.show()  # If you want to display it as well
-#plt.close()
-
-# plt.figure(figsize=(8, 6))
-# sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', cbar=False)
-# plt.xlabel('Predicted Labels')
-# plt.ylabel('True Labels')
-# plt.title('Confusion Matrix')
-
-# # Save the figure
-# plt.savefig('confusion_matrix.png', bbox_inches='tight')
-# #plt.close()  # Close the figure to prevent it from displaying in the notebook/output
-# plt.show()
-
 
 
 # 13-Metrics summary
