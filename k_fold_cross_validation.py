@@ -122,3 +122,27 @@ def k_fold_cross_validation(model, dataset, num_classes, num_epochs=10, num_fold
     print(f"Average Micro Precision: {avg_micro_precision}, Average Micro Recall: {avg_micro_recall}, Average Micro F1-score: {avg_micro_f1}")
     print(f"Average Accuracy: {avg_accuracy}")
 
+# Main script
+if __name__ == "__main__":
+    # Define data directory
+    data_dir = "dataset"
+
+    # Define transformations
+    data_transforms = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomRotation(15),
+        transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+
+    # Load dataset
+    dataset = datasets.ImageFolder(root=data_dir, transform=data_transforms)
+
+    # Initialize the model
+    num_classes = 4  # Number of classes in your dataset
+    model = CNN_VAR_2(num_classes)
+
+    # Perform k-fold cross-validation
+    k_fold_cross_validation(model, dataset, num_classes)
