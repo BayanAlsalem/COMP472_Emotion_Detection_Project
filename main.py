@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 
 # 2-Define data directory
-data_dir = "C:/Users/User/PycharmProjects/COMP472_Emotion_Detection_Project/dataset"
+data_dir = "C:/Users/ethan/Downloads/COMP472/COMP472_Emotion_Detection_Project/dataset" #C:\Users\ethan\Downloads\COMP472\COMP472_Emotion_Detection_Project\dataset
 
 # 3-Define a transformation: transform for preprocessing the images
 data_transforms = transforms.Compose([
@@ -133,10 +133,10 @@ test_dataset = Subset(dataset, test_indices)
 # ####################################################################################################
 
 # 1- hyper-parameters definition
-num_epochs = 15
+num_epochs = 14
 num_classes = 4
-# learning_rate = 0.0001 # For cnn_4 and cnn_var_1
-learning_rate = 0.00001 # For cnn_var_2
+learning_rate = 0.0001 # For cnn_4 and cnn_var_1
+#learning_rate = 0.00001 # For cnn_var_2
 
 # 2-Import the cnn class
 from cnn_4 import CNN_Module_4
@@ -144,8 +144,8 @@ from cnn_var_1 import CNN_VAR_1
 from cnn_var_2 import CNN_VAR_2
 
 # 3-Instantiate the CNN model
-# model = CNN_Module_4(num_classes)
-# model = CNN_VAR_1(num_classes)
+#model = CNN_Module_4(num_classes)
+#model = CNN_VAR_1(num_classes)
 model = CNN_VAR_2(num_classes)
 
 # 4-Define loss function
@@ -232,7 +232,7 @@ for epoch in range(num_epochs):
 
 # 9- Load the best model for evaluation
 #best_model = CNN_Module_4(num_classes)
-# best_model = CNN_VAR_1(num_classes)
+#best_model = CNN_VAR_1(num_classes)
 best_model = CNN_VAR_2(num_classes)
 best_model.load_state_dict(torch.load('best_model.pth'))
 best_model.eval()
