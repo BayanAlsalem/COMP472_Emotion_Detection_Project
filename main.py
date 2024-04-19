@@ -1,6 +1,8 @@
 # ####################################################################################################
 # ################################ Data cleaning and Data Labeling ###################################
 # ####################################################################################################
+import json
+import os
 
 # 1-Import necessary libraries
 import torch
@@ -42,13 +44,92 @@ dataset = datasets.ImageFolder(root=data_dir, transform=data_transforms)
 # 5-Extract data (images) and targets (labels) from the dataset for splitting
 data = [s[0] for s in dataset.samples]
 targets = [s[1] for s in dataset.samples]
+#----------------------------------------------------------------
+#--------------------Added Biased code---------------------------
+#________________________________________________________________
+# Assuming bias_map is a dictionary mapping sample indices to bias attributes/values
+# Load bias attributes data
+with open('bias_map.json', 'r') as file:
+    bias_map = json.load(file)
+
+# You need to define your biased criteria Adjust parameters accordingly
+biased_attr = "gender"
+biased_val = "female"
+bias_pct= .1  # Example: 20% bias towards females
+
+#fetch the indicies from the biased map
+biased_indices = [idx for idx, (sample_path, _) in enumerate(dataset.samples)
+                  if os.path.basename(sample_path) in bias_map and
+                  bias_map[os.path.basename(sample_path)][biased_attr] == biased_val]
+total_biased_indices = len(biased_indices)
+print("num of biases in totla: " + str(total_biased_indices))
+
+# and check to see how many biased samples from the amount of bias%
+num_biased_samples = int(bias_pct * total_biased_indices)
+print("num of biases samples needed: " + str(num_biased_samples))
+
+
+# Define the split ratios for training, validation, and test sets
+train_ratio = 0.7
+val_test_ratio = 0.15
+
+# Calculate the number of biased samples needed for training according to the split ratio
+num_train_samples_bias = int(train_ratio * num_biased_samples)
+print("num of train sample bias: " + str(num_train_samples_bias))
+
+
+# Convert to a float between 0 and 1
+train_size_ratio = num_train_samples_bias / len(biased_indices)
+print("num of biases: " + str(train_size_ratio))
+
+
+# Split the biased indices for training, validation, and test sets
+train_biased_indices, remaining_indices = train_test_split(biased_indices, train_size=train_size_ratio, random_state=1)
+remaining_samples = [i for i in range(len(dataset)) if i not in biased_indices]
+print("leftover unbiased images: " + str(len(remaining_samples)))
+
+# Calculate the number of remaining samples for training after allocating biased samples
+remaining_train_size = int(len(dataset) * 0.7) - num_train_samples_bias
+print("remaining train size: "+ str(remaining_train_size))
+
+# must upsample the remaining samples
+from sklearn.utils import resample
+
+# Upsample the biased samples to match the number of unbiased samples
+if remaining_train_size > len(remaining_samples):
+    amount_need_upsample = remaining_train_size - (len(remaining_samples))
+    biased_samples_upsampled = resample(remaining_samples,
+                                   replace=True,  # Sample with replacement
+                                   n_samples= amount_need_upsample+1,  # Match the number of unbiased samples
+                                   random_state=1)  # Set random seed for reproducibility
+
+final_train_indices = biased_samples_upsampled + remaining_samples
+
+# Split the remaining samples for training
+remaining_train_indices, remaining_temp_indices = train_test_split(
+    final_train_indices, train_size=remaining_train_size, random_state=1)
+# Further split the remaining indices for validation and test sets
+
+# Calculate the number of remaining samples for training after allocating biased samples
+num_remaining_train_samples = len(dataset) - len(train_biased_indices)
+
+#combine the remaining indices with remainng_temp_indicies to get the indices for val size
+#test_val_indices = remaining_indices+ remaining_temp_indices
+
+# Split the remaining samples for validation and test sets
+val_size = int(num_remaining_train_samples * val_test_ratio)
+val_indices, test_indices = train_test_split(remaining_indices, test_size=val_size, random_state=1)
+
+
+# Combine the biased and unbiased indices for training
+train_indices = train_biased_indices + remaining_train_indices
 
 # 6-Split the dataset into training, validation, and test sets using train_test_split function from scikit-learn.
 # the split ratios are 70% for training, 15% for validation, and 15% for testing.
 # in the lab exercise, random_state =1 but I did some research and sometimes they use higher values
-train_indices, temp_indices = train_test_split(range(len(dataset)), test_size=0.3, random_state=1)
-val_indices, test_indices = train_test_split(temp_indices, test_size=0.5, random_state=1)
-
+# train_indices, temp_indices = train_test_split(range(len(dataset)), test_size=0.3, random_state=1)
+# val_indices, test_indices = train_test_split(temp_indices, test_size=0.5, random_state=1)
+#
 
 # 7-Create subsets for training, validation, and testing
 train_dataset = Subset(dataset, train_indices)

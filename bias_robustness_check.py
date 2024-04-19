@@ -28,12 +28,9 @@ def add_images_to_train(train_loader, bias_map, biased_attribute, desired_bias_v
     """Add randomly selected images that match the desired bias to the training set."""
     dataset = train_loader.dataset
     total_images = len(dataset)
-    for idx, sample in enumerate(dataset):
-        tensor_hash = tuple(sample[0].numpy().tolist())
-        print(tensor_hash)
 
-    biased_indices = [idx for idx, sample in enumerate(dataset)
-                      if bias_map[tuple(sample[0].numpy().tolist())][biased_attribute] == desired_bias_value]
+    biased_indices = [idx for idx, sample in enumerate(dataset) if
+                      bias_map[sample[0]][biased_attribute] == desired_bias_value]
     non_biased_indices = [idx for idx, sample in enumerate(dataset) if
                           bias_map[sample[0]][biased_attribute] != desired_bias_value]
 
