@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,33 +7,8 @@ import numpy as np
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Subset
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from cnn_var_2 import CNN_VAR_2  # Ensure this import is correctly set up based on your project structure
 
-# Define your CNN architecture
-class CNN_VAR_2(nn.Module):
-    def __init__(self, num_classes):
-        super(CNN_VAR_2, self).__init__()
-        self.conv0 = nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1)
-        self.bn0 = nn.BatchNorm2d(32)
-        self.conv1 = nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm2d(32)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(64)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        self.bn3 = nn.BatchNorm2d(128)
-        self.fc1 = nn.Linear(6272, 1024)
-        self.fc2 = nn.Linear(1024, num_classes)
-        self.pool = nn.MaxPool2d(2, 2)
-
-    def forward(self, x):
-        x = self.pool(F.relu(self.bn0(self.conv0(x))))
-        x = self.pool(F.relu(self.bn1(self.conv1(x))))
-        x = self.pool(F.relu(self.bn2(self.conv2(x))))
-        x = self.pool(F.relu(self.bn3(self.conv3(x))))
-        x = x.view(-1, 6272)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, 0.5, training=self.training)
-        x = self.fc2(x)
-        return x
 
 # Function to evaluate model performance
 def evaluate_model(model, dataloader):
@@ -52,24 +28,27 @@ def evaluate_model(model, dataloader):
     f1 = f1_score(all_labels, all_preds, average='macro', zero_division=0)
     return accuracy, precision, recall, f1
 
+
 # Load bias attributes data
 with open('bias_map.json', 'r') as file:
     bias_map = json.load(file)
+
 
 # Function to filter dataset indices by attribute safely
 def filter_indices_by_attribute(dataset, attribute, value):
     filtered_indices = []
     for idx, (path, _) in enumerate(dataset.imgs):
-        filename = path.split('/')[-1]
+        filename = os.path.basename(path)
         if filename in bias_map and bias_map[filename].get(attribute) == value:
             filtered_indices.append(idx)
     return filtered_indices
 
+
 # Main script
 if __name__ == "__main__":
     # Load the model
-    model_path = 'best_model.pth'  # Ensure this is the correct path
-    num_classes = 4  # Adjust based on your dataset classes
+    model_path = 'best_model.pth'
+    num_classes = 4
     model = CNN_VAR_2(num_classes)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -102,13 +81,15 @@ if __name__ == "__main__":
             if indices:
                 demo_loader = DataLoader(Subset(dataset, indices), batch_size=32, shuffle=False)
                 accuracy, precision, recall, f1 = evaluate_model(model, demo_loader)
-                results[f'{attribute}_{value}'] = {'accuracy': accuracy, 'precision': precision, 'recall': recall, 'f1': f1}
+                results[f'{attribute}_{value}'] = {'accuracy': accuracy, 'precision': precision, 'recall': recall,
+                                                'f1': f1}
                 attribute_stats['accuracy'].append(accuracy)
                 attribute_stats['precision'].append(precision)
                 attribute_stats['recall'].append(recall)
                 attribute_stats['f1'].append(f1)
-                print(f'{attribute.capitalize()} {value.capitalize()} - Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1-score: {f1:.4f}')
-        
+                print(
+                    f'{attribute.capitalize()} {value.capitalize()} - Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1-score: {f1:.4f}')
+
         # Print average statistics for each attribute
         print(f"\nAverage for {attribute.capitalize()}:")
         print(f'Accuracy: {np.mean(attribute_stats["accuracy"]):.4f}')
