@@ -20,6 +20,7 @@ from torchvision import transforms
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.utils import resample
 
 
 
@@ -55,7 +56,7 @@ with open('bias_map.json', 'r') as file:
 # You need to define your biased criteria Adjust parameters accordingly
 biased_attr = "gender"
 biased_val = "female"
-bias_pct= .1  # Example: 20% bias towards females
+bias_pct= .5  # Example: 20% bias towards females
 
 #fetch the indicies from the biased map
 biased_indices = [idx for idx, (sample_path, _) in enumerate(dataset.samples)
@@ -74,7 +75,7 @@ train_ratio = 0.7
 val_test_ratio = 0.15
 
 # Calculate the number of biased samples needed for training according to the split ratio
-num_train_samples_bias = int(train_ratio * num_biased_samples)
+num_train_samples_bias = int((len(dataset) * train_ratio) * bias_pct)
 print("num of train sample bias: " + str(num_train_samples_bias))
 
 
@@ -82,6 +83,13 @@ print("num of train sample bias: " + str(num_train_samples_bias))
 train_size_ratio = num_train_samples_bias / len(biased_indices)
 print("num of biases: " + str(train_size_ratio))
 
+if num_train_samples_bias > len(biased_indices):
+    amount_need_upsample = num_train_samples_bias - (len(biased_indices))
+    biased_samples_upsampled = resample(biased_indices,
+                                   replace=True,  # Sample with replacement
+                                   n_samples= amount_need_upsample+1,  # Match the number of unbiased samples
+                                   random_state=1)  # Set random seed for reproducibility
+    biased_indices = biased_samples_upsampled + biased_indices
 
 # Split the biased indices for training, validation, and test sets
 train_biased_indices, remaining_indices = train_test_split(biased_indices, train_size=train_size_ratio, random_state=1)
@@ -93,8 +101,6 @@ remaining_train_size = int(len(dataset) * 0.7) - num_train_samples_bias
 print("remaining train size: "+ str(remaining_train_size))
 
 # must upsample the remaining samples
-from sklearn.utils import resample
-
 # Upsample the biased samples to match the number of unbiased samples
 if remaining_train_size > len(remaining_samples):
     amount_need_upsample = remaining_train_size - (len(remaining_samples))
@@ -102,8 +108,9 @@ if remaining_train_size > len(remaining_samples):
                                    replace=True,  # Sample with replacement
                                    n_samples= amount_need_upsample+1,  # Match the number of unbiased samples
                                    random_state=1)  # Set random seed for reproducibility
-
-final_train_indices = biased_samples_upsampled + remaining_samples
+    final_train_indices = biased_samples_upsampled + remaining_samples
+else:
+    final_train_indices = remaining_samples
 
 # Split the remaining samples for training
 remaining_train_indices, remaining_temp_indices = train_test_split(
@@ -114,11 +121,11 @@ remaining_train_indices, remaining_temp_indices = train_test_split(
 num_remaining_train_samples = len(dataset) - len(train_biased_indices)
 
 #combine the remaining indices with remainng_temp_indicies to get the indices for val size
-#test_val_indices = remaining_indices+ remaining_temp_indices
+test_val_indices = remaining_indices+ remaining_temp_indices
 
 # Split the remaining samples for validation and test sets
 val_size = int(num_remaining_train_samples * val_test_ratio)
-val_indices, test_indices = train_test_split(remaining_indices, test_size=val_size, random_state=1)
+val_indices, test_indices = train_test_split(test_val_indices, test_size=val_size, random_state=1)
 
 
 # Combine the biased and unbiased indices for training
