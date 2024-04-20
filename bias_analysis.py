@@ -39,6 +39,8 @@ def filter_indices_by_attribute(dataset, attribute, value):
     filtered_indices = []
     for idx, (path, _) in enumerate(dataset.imgs):
         filename = os.path.basename(path)
+        #filename_full = path.split('/')[-1]
+        #filename = os.path.basename(filename_full)
         if filename in bias_map and bias_map[filename].get(attribute) == value:
             filtered_indices.append(idx)
     return filtered_indices

@@ -1,6 +1,8 @@
 # ####################################################################################################
 # ################################ Data cleaning and Data Labeling ###################################
 # ####################################################################################################
+import json
+import os
 
 # 1-Import necessary libraries
 import torch
@@ -18,6 +20,7 @@ from torchvision import transforms
 import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.utils import resample
 
 
 
@@ -42,13 +45,97 @@ dataset = datasets.ImageFolder(root=data_dir, transform=data_transforms)
 # 5-Extract data (images) and targets (labels) from the dataset for splitting
 data = [s[0] for s in dataset.samples]
 targets = [s[1] for s in dataset.samples]
+#----------------------------------------------------------------
+#--------------------Added Biased code---------------------------
+#________________________________________________________________
+# Assuming bias_map is a dictionary mapping sample indices to bias attributes/values
+# Load bias attributes data
+with open('bias_map.json', 'r') as file:
+    bias_map = json.load(file)
+
+# You need to define your biased criteria Adjust parameters accordingly
+biased_attr = "age"
+biased_val = "young"
+bias_pct= .3  # Example: 20% bias towards females
+
+#fetch the indicies from the biased map
+biased_indices = [idx for idx, (sample_path, _) in enumerate(dataset.samples)
+                  if os.path.basename(sample_path) in bias_map and
+                  bias_map[os.path.basename(sample_path)][biased_attr] == biased_val]
+total_biased_indices = len(biased_indices)
+print("num of biases in total: " + str(total_biased_indices))
+
+
+# Define the split ratios for training, validation, and test sets
+train_ratio = 0.7
+val_test_ratio = 0.15
+
+# Calculate the number of biased samples needed for training according to the split ratio
+num_train_samples_bias = int((len(dataset) * train_ratio) * bias_pct)
+print("num of train sample bias needed: " + str(num_train_samples_bias))
+
+
+# Convert to a float between 0 and 1
+train_size_ratio = num_train_samples_bias / len(biased_indices)
+print("num of biases ratio: " + str(train_size_ratio))
+
+if num_train_samples_bias > len(biased_indices):
+    amount_need_upsample = num_train_samples_bias - (len(biased_indices))
+    biased_samples_upsampled = resample(biased_indices,
+                                   replace=True,  # Sample with replacement
+                                   n_samples= amount_need_upsample+1,  # Match the number of unbiased samples
+                                   random_state=1)  # Set random seed for reproducibility
+    biased_indices = biased_samples_upsampled + biased_indices
+    train_size_ratio = num_train_samples_bias / len(biased_indices)
+    print("num of biases ratio after upsample: " + str(train_size_ratio))
+
+# Split the biased indices for training, validation, and test sets
+train_biased_indices, remaining_indices = train_test_split(biased_indices, train_size=train_size_ratio, random_state=1)
+remaining_samples = [i for i in range(len(dataset)) if i not in biased_indices]
+print("leftover unbiased images: " + str(len(remaining_samples)))
+
+# Calculate the number of remaining samples for training after allocating biased samples
+remaining_train_size = int(len(dataset) * 0.7) - num_train_samples_bias
+print("remaining train size: "+ str(remaining_train_size))
+
+# must upsample the remaining samples
+# Upsample the biased samples to match the number of unbiased samples
+if remaining_train_size > len(remaining_samples):
+    amount_need_upsample = remaining_train_size - (len(remaining_samples))
+    biased_samples_upsampled = resample(remaining_samples,
+                                   replace=True,  # Sample with replacement
+                                   n_samples= amount_need_upsample+1,  # Match the number of unbiased samples
+                                   random_state=1)  # Set random seed for reproducibility
+    final_train_indices = biased_samples_upsampled + remaining_samples
+    print("remaining indices unbiased: " + str(len(final_train_indices)))
+
+else:
+    final_train_indices = remaining_samples
+# Split the remaining samples for training
+remaining_train_indices, remaining_temp_indices = train_test_split(
+    final_train_indices, train_size=remaining_train_size, random_state=1)
+# Further split the remaining indices for validation and test sets
+
+# Calculate the number of remaining samples for training after allocating biased samples
+num_remaining_train_samples = len(dataset) - len(train_biased_indices)
+
+#combine the remaining indices with remainng_temp_indicies to get the indices for val size
+test_val_indices = remaining_indices + remaining_temp_indices
+
+# Split the remaining samples for validation and test sets
+val_size = int(len(dataset) * val_test_ratio)
+val_indices, test_indices = train_test_split(test_val_indices, test_size=val_size, random_state=1)
+
+
+# Combine the biased and unbiased indices for training
+train_indices = train_biased_indices + remaining_train_indices
 
 # 6-Split the dataset into training, validation, and test sets using train_test_split function from scikit-learn.
 # the split ratios are 70% for training, 15% for validation, and 15% for testing.
 # in the lab exercise, random_state =1 but I did some research and sometimes they use higher values
-train_indices, temp_indices = train_test_split(range(len(dataset)), test_size=0.3, random_state=1)
-val_indices, test_indices = train_test_split(temp_indices, test_size=0.5, random_state=1)
-
+# train_indices, temp_indices = train_test_split(range(len(dataset)), test_size=0.3, random_state=1)
+# val_indices, test_indices = train_test_split(temp_indices, test_size=0.5, random_state=1)
+#
 
 # 7-Create subsets for training, validation, and testing
 train_dataset = Subset(dataset, train_indices)
@@ -143,11 +230,15 @@ learning_rate = 1e-4 #0.00001 # For cnn_var_2
 from cnn_4 import CNN_Module_4
 from cnn_var_1 import CNN_VAR_1
 from cnn_var_2 import CNN_VAR_2
+from cnn_5 import CNN_Module_5
+
 
 # 3-Instantiate the CNN model
 # model = CNN_Module_4(num_classes)
 # model = CNN_VAR_1(num_classes)
 model = CNN_VAR_2(num_classes)
+#model = CNN_Module_5(num_classes)
+
 
 # 4-Define loss function
 criterion = nn.CrossEntropyLoss()
@@ -174,7 +265,6 @@ best_accuracy = None
 best_epoch = 0
 patience = 0.25 * num_epochs  # Number of epochs to wait for improvement before stopping
 early_stopping_counter = 0
-
 print("Starting training loop...")
 for epoch in range(num_epochs):
     print(f"Inside epoch loop, epoch: {epoch}")
@@ -198,7 +288,6 @@ for epoch in range(num_epochs):
         _, predicted = torch.max(outputs.data, 1)
         correct = (predicted == labels).sum().item()
         acc_list.append(correct / total)
-
     print("The average running loss per batch over the entire training dataset.", running_loss / len(train_loader))
 
     # Model evaluation on validation set
@@ -239,6 +328,8 @@ for epoch in range(num_epochs):
 #best_model = CNN_Module_4(num_classes)
 # best_model = CNN_VAR_1(num_classes)
 best_model = CNN_VAR_2(num_classes)
+#best_model = CNN_Module_5(num_classes)
+
 best_model.load_state_dict(torch.load('best_model.pth'))
 best_model.eval()
 
