@@ -56,7 +56,7 @@ with open('bias_map.json', 'r') as file:
 # You need to define your biased criteria Adjust parameters accordingly
 biased_attr = "age"
 biased_val = "young"
-bias_pct= .3  # Example: 20% bias towards females
+bias_pct= .5  # Example: 20% bias towards females
 
 #fetch the indicies from the biased map
 biased_indices = [idx for idx, (sample_path, _) in enumerate(dataset.samples)
